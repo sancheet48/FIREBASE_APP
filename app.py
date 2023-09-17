@@ -1,0 +1,69 @@
+import streamlit as st
+import pandas as pd
+import base64
+
+df = pd.read_csv("titanic.csv")
+imp_cols = ['Survived', 'Pclass', 'Sex', 'Embarked']
+
+st.title("Titanic Survivor Predictor")
+
+nav = st.sidebar.selectbox(
+    "What would you like to do?",
+    ("1. Read the Data", "2. Use Chatbot", "3. Update the data")
+)
+
+my_large_df = None  # Initialize my_large_df to None
+
+def nav_1():
+    choice = dict.fromkeys(imp_cols)
+
+    for key in choice:
+        choice[key] = "No Value Selected"
+
+    with st.form("filter_form"):
+        for ele in imp_cols:
+            column_name = ele
+            unique_values = ["No Value Selected"] + list(df[column_name].unique())
+            selected_value = st.selectbox(column_name, unique_values)
+            if selected_value != "No Value Selected":
+                choice[ele] = selected_value
+
+        submitted = st.form_submit_button("Submit")
+
+    if submitted:
+        # Create a DataFrame based on the selected values
+        filtered_df = df
+        for key, value in choice.items():
+            if value != "No Value Selected":
+                filtered_df = filtered_df[filtered_df[key] == value]
+
+        # Display the selected values and the filtered DataFrame
+        st.write("Selected Values:")
+        st.write(choice)
+
+        st.write("Filtered DataFrame:")
+        st.write(filtered_df)
+
+        return filtered_df
+
+@st.cache_data
+def convert_df(df):
+    return df.to_csv(index=False).encode('utf-8')  # Convert DataFrame to CSV and encode as bytes
+
+# Display the form or other content based on user choice
+if nav == "1. Read the Data":
+    st.write("Welcome to Reading the Data")
+    my_large_df = nav_1()
+
+    # Add a button to download the filtered data as CSV
+    if my_large_df is not None and not my_large_df.empty:
+        csv = convert_df(my_large_df)
+        b64 = base64.b64encode(csv).decode()
+        href = f'<a href="data:file/csv;base64,{b64}" download="filtered_data.csv">Download data as CSV</a>'
+        st.markdown(href, unsafe_allow_html=True)
+
+if nav == "2. Use Chatbot":
+    st.write("Welcome to Using the Chatbot")
+
+if nav == "3. Update the data":
+    st.write("Welcome to Updating the Data")
